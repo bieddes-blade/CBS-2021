@@ -28,6 +28,7 @@ struct SearchNode {
     std::set<int> confAgents;
     double f, g, h;
     SearchNode *parent;
+    int label;
 
     SearchNode(int i, int j)
         : i(i)
@@ -39,6 +40,8 @@ struct SearchNode {
         , parent(nullptr)
         , numCAT(0)
         , confAgents(std::set<int>())
+        // for multi-label A*
+        , label(0)
     { }
 
     void initCAT(ConfMap& confMap) {
@@ -52,13 +55,16 @@ struct SearchNode {
 
     bool operator< (const SearchNode& other) const {
         if (i == other.i) {
+            if (j == other.j) {
+                return label > other.label;
+            }
             return j < other.j;
         }
         return i < other.i;
     }
 
     bool operator== (const SearchNode& other) const {
-        return i == other.i && j == other.j && t == other.t;
+        return i == other.i && j == other.j && t == other.t && label == other.label;
     }
 
     bool operator!= (const SearchNode& other) const {

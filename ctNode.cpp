@@ -1,5 +1,6 @@
 #include "ctNode.h"
 
+#include <cmath>
 #include <queue>
 #include <vector>
 #include <unordered_map>
@@ -72,27 +73,12 @@ void CTNode::countCost(std::string heuristic) {
     int agentInConflict = 0;
     int pairsInConflict = 0;
     int minVertexCover = 0;
-    double sumLenghts = 0;
+    int sumLenghts = 0;
 
     // sum of path sizes
     if (heuristic == "normal") {
         for (int i = 0; i < ln; ++i) {
             sumLenghts += paths[i].size() - 1;
-        }
-        cost = sumLenghts;
-        return;
-    }
-
-    // sum of path lengths
-    if (heuristic == "normal_diagonal") {
-        for (int i = 0; i < ln; ++i) {
-            for (int j = 1; j < paths[i].size(); ++j) {
-                double x1 = paths[i][j].first;
-                double x2 = paths[i][j - 1].first;
-                double y1 = paths[i][j].second;
-                double y2 = paths[i][j - 1].second;
-                sumLenghts += std::sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
-            }
         }
         cost = sumLenghts;
         return;
@@ -140,7 +126,7 @@ void CTNode::countCost(std::string heuristic) {
     }
 }
 
-double CTNode::countPathCost(int i, std::string heuristic) {
+int CTNode::countPathCost(int i, std::string heuristic) {
     double sumLenghts = 0;
 
     // sum of path sizes
@@ -186,7 +172,7 @@ void CTNode::countCAT() {
     }
 }
 
-std::string CTNode::findConflictType(Map& map, std::vector<Agent>& agents, Conflict& conflict, std::string heuristic) {
+std::string CTNode::findConflictType(Map& map, bool dijkstra, std::map<pairVert, int, pvCompare>& distMap, std::vector<Agent>& agents, Conflict& conflict, std::string heuristic) {
     // we calculate the costs of the agents' individual paths
     int oldCost0 = countPathCost((conflict.agents).first, heuristic);
     int oldCost1 = countPathCost((conflict.agents).second, heuristic);
@@ -229,8 +215,7 @@ std::string CTNode::findConflictType(Map& map, std::vector<Agent>& agents, Confl
 
         // planning a new path
         Search search(map);
-        search.dijkstraPrecalc(map, node.vertexConstr, node.edgeConstr, agents[agent]);
-        search.startSearch(map, node.vertexConstr, node.edgeConstr, node.conflictAvoidanceTable, agents[agent], node.stateAgentMap, true, false, 1.0);
+        search.startSearch(map, distMap, node.vertexConstr, node.edgeConstr, node.conflictAvoidanceTable, agents[agent], node.stateAgentMap, dijkstra, false, 1.0);
         node.paths[agent] = search.fullPath;
 
         if (agent_number == 0) {
@@ -255,22 +240,23 @@ std::string CTNode::findConflictType(Map& map, std::vector<Agent>& agents, Confl
     }
 }
 
-Conflict CTNode::findBestConflict(Map& map, std::vector<Agent>& agents, bool prioritizeConflicts, std::string heuristic) {
-
-    bool useRectangular = true;
-
+Conflict CTNode::findBestConflict(Map& map, bool dijkstra, std::map<pairVert, int, pvCompare>& distMap, std::vector<Agent>& agents, bool prioritizeConflicts, bool useSymmetry, std::string heuristic, int horizon) {
     int ln = paths.size();
     Conflict bestConflict("none");
     Conflict semiCardConflict("none");
-    int where = -1;
 
     // VERTEX CONFLICTS
 
     std::vector<EventVertex> collectEvents;
     for (int agent = 0; agent < ln; ++agent) {
         // create event 'agent entered first vertex'
-        collectEvents.push_back(EventVertex(agents[agent].speed * 0, agent, agents[agent].speed, 0, 0));
-        for (int step = 1; step < paths[agent].size(); ++step) {
+
+        if (paths[agent].size()) {
+            collectEvents.push_back(EventVertex(agents[agent].speed * 0, agent, agents[agent].speed, 0, 0));
+        }
+
+        // conflicts that happen after the horizon don't matter
+        for (int step = 1; step < std::min(horizon, int(paths[agent].size())); ++step) {
             if (paths[agent][step] != paths[agent][step - 1]) {
                 // create event 'agent entered a new vertex'
                 collectEvents.push_back(EventVertex(agents[agent].speed * step, agent, agents[agent].speed, step, 0));
@@ -278,8 +264,11 @@ Conflict CTNode::findBestConflict(Map& map, std::vector<Agent>& agents, bool pri
                 collectEvents.push_back(EventVertex(agents[agent].speed * (step - 1), agent, agents[agent].speed, (step - 1), 1));
             }
         }
-        int lastStep = paths[agent].size() - 1;
-        collectEvents.push_back(EventVertex(agents[agent].speed * lastStep, agent, agents[agent].speed, lastStep, 1));
+
+        if (paths[agent].size()) {
+            int lastStep = paths[agent].size() - 1;
+            collectEvents.push_back(EventVertex(agents[agent].speed * lastStep, agent, agents[agent].speed, lastStep, 1));
+        }
     }
 
     // sort all events by two keys: time and type
@@ -299,10 +288,9 @@ Conflict CTNode::findBestConflict(Map& map, std::vector<Agent>& agents, bool pri
                     int step2 = scanLine[curVert].second;
                     Conflict curConflict = Conflict("vertex", {a1, a2}, step1, step2, paths[a1][step1], std::pair<int, int>());
                     bestConflict = curConflict;
-                    where = 0;
 
                     // lets check if this is a cardinal rectangular conflict
-                    int start_ix = agents[a1].start_i;
+                    /*int start_ix = agents[a1].start_i;
                     int start_iy = agents[a1].start_j;
                     int goal_ix = agents[a1].fin_i;
                     int goal_iy = agents[a1].fin_j;
@@ -325,7 +313,8 @@ Conflict CTNode::findBestConflict(Map& map, std::vector<Agent>& agents, bool pri
                                     if ((start_ix - start_jx) * (goal_ix - goal_jx) <= 0) {
                                         if ((start_iy - start_jy) * (goal_iy - goal_jy) <= 0) {
                                             // agents a1 and a2 are involved in a cardinal rectangle conflict
-                                            if (useRectangular) {
+                                            if (useSymmetry) {
+                                                //std::cout << "FOUND ONE!\n";
                                                 curConflict.type = "rectangular";
                                             }
                                             return curConflict;
@@ -334,11 +323,11 @@ Conflict CTNode::findBestConflict(Map& map, std::vector<Agent>& agents, bool pri
                                 }
                             }
                         }
-                    }
+                    }*/
 
                     // if PC is active, we check the type of the conflict
                     if (prioritizeConflicts == true) {
-                        std::string type = findConflictType(map, agents, curConflict, heuristic);
+                        std::string type = findConflictType(map, dijkstra, distMap, agents, curConflict, heuristic);
                         if (type == "cardinal") {
                             return curConflict;
                         } else if (type == "semi-cardinal") {
@@ -359,8 +348,6 @@ Conflict CTNode::findBestConflict(Map& map, std::vector<Agent>& agents, bool pri
     }
 
     if (bestConflict.type != "none") {
-        std::cout << "HEY\n";
-        std::cout << bestConflict.agents.first << " " << bestConflict.agents.second << " " << bestConflict.time1 << " " << bestConflict.time2 << " " << bestConflict.type << " " << where << "\n\n";
         return bestConflict;
     }
     
@@ -372,7 +359,7 @@ Conflict CTNode::findBestConflict(Map& map, std::vector<Agent>& agents, bool pri
 
     std::vector<EventEdge> collectEventsSwap;
     for (int agent = 0; agent < ln; ++agent) {
-        for (int step = 1; step < paths[agent].size(); ++step) {
+        for (int step = 1; step < std::min(horizon, int(paths[agent].size())); ++step) {
             if (paths[agent][step] != paths[agent][step - 1]) {
                 int in_time = (step - 1) * agents[agent].speed;
                 int out_time = step * agents[agent].speed;
@@ -417,11 +404,10 @@ Conflict CTNode::findBestConflict(Map& map, std::vector<Agent>& agents, bool pri
 
                     Conflict curConflict = Conflict("edge", {a1, a2}, step1, step2, start, end);
                     bestConflict = curConflict;
-                    where = 1;
 
                     // if PC is active, we check the type of the conflict
                     if (prioritizeConflicts == true) {
-                        std::string type = findConflictType(map, agents, curConflict, heuristic);
+                        std::string type = findConflictType(map, dijkstra, distMap, agents, curConflict, heuristic);
                         if (type == "cardinal") {
                             return curConflict;
                         } else if (type == "semi-cardinal") {
@@ -449,7 +435,7 @@ Conflict CTNode::findBestConflict(Map& map, std::vector<Agent>& agents, bool pri
 
     std::vector<EventEdge> collectEventsOver;
     for (int agent = 0; agent < ln; ++agent) {
-        for (int step = 1; step < paths[agent].size(); ++step) {
+        for (int step = 1; step < std::min(horizon, int(paths[agent].size())); ++step) {
             if (paths[agent][step] != paths[agent][step - 1]) {
                 int in_time = (step - 1) * agents[agent].speed;
                 int out_time = step * agents[agent].speed;
@@ -496,11 +482,10 @@ Conflict CTNode::findBestConflict(Map& map, std::vector<Agent>& agents, bool pri
 
                 Conflict curConflict = Conflict("edge", {a1, a2}, step1, step2, start, end);
                 bestConflict = curConflict;
-                where = 2;
 
                 // if PC is active, we check the type of the conflict
                 if (prioritizeConflicts == true) {
-                    std::string type = findConflictType(map, agents, curConflict, heuristic);
+                    std::string type = findConflictType(map, dijkstra, distMap, agents, curConflict, heuristic);
                     if (type == "cardinal") {
                         return curConflict;
                     } else if (type == "semi-cardinal") {
@@ -521,7 +506,7 @@ Conflict CTNode::findBestConflict(Map& map, std::vector<Agent>& agents, bool pri
     return bestConflict;
 }
 
-int CTNode::findNumOfConflicts(Map& map, std::vector<Agent>& agents, int agentCheck) {
+int CTNode::findNumOfConflicts(Map& map, std::vector<Agent>& agents, int agentCheck, int horizon) {
     int ln = paths.size();
     std::set<std::tuple<int, int, int, int>> allConf;
 
@@ -529,15 +514,21 @@ int CTNode::findNumOfConflicts(Map& map, std::vector<Agent>& agents, int agentCh
 
     std::vector<EventVertex> collectEvents;
     for (int agent = 0; agent < ln; ++agent) {
-        collectEvents.push_back(EventVertex(agents[agent].speed * 0, agent, agents[agent].speed, 0, 0));
-        for (int step = 1; step < paths[agent].size(); ++step) {
+        if (paths[agent].size()) {
+            collectEvents.push_back(EventVertex(agents[agent].speed * 0, agent, agents[agent].speed, 0, 0));
+        }
+
+        for (int step = 1; step < std::min(horizon, int(paths[agent].size())); ++step) {
             if (paths[agent][step] != paths[agent][step - 1]) {
                 collectEvents.push_back(EventVertex(agents[agent].speed * step, agent, agents[agent].speed, step, 0));
                 collectEvents.push_back(EventVertex(agents[agent].speed * (step - 1), agent, agents[agent].speed, (step - 1), 1));
             }
         }
-        int lastStep = paths[agent].size() - 1;
-        collectEvents.push_back(EventVertex(agents[agent].speed * lastStep, agent, agents[agent].speed, lastStep, 1));
+
+        if (paths[agent].size()) {
+            int lastStep = paths[agent].size() - 1;
+            collectEvents.push_back(EventVertex(agents[agent].speed * lastStep, agent, agents[agent].speed, lastStep, 1));
+        }
     }
 
     std::sort(collectEvents.begin(), collectEvents.end());
@@ -574,7 +565,7 @@ int CTNode::findNumOfConflicts(Map& map, std::vector<Agent>& agents, int agentCh
 
     std::vector<EventEdge> collectEventsSwap;
     for (int agent = 0; agent < ln; ++agent) {
-        for (int step = 1; step < paths[agent].size(); ++step) {
+        for (int step = 1; step < std::min(horizon, int(paths[agent].size())); ++step) {
             if (paths[agent][step] != paths[agent][step - 1]) {
                 int in_time = (step - 1) * agents[agent].speed;
                 int out_time = step * agents[agent].speed;
@@ -633,7 +624,7 @@ int CTNode::findNumOfConflicts(Map& map, std::vector<Agent>& agents, int agentCh
 
     std::vector<EventEdge> collectEventsOver;
     for (int agent = 0; agent < ln; ++agent) {
-        for (int step = 1; step < paths[agent].size(); ++step) {
+        for (int step = 1; step < std::min(horizon, int(paths[agent].size())); ++step) {
             if (paths[agent][step] != paths[agent][step - 1]) {
                 int in_time = (step - 1) * agents[agent].speed;
                 int out_time = step * agents[agent].speed;

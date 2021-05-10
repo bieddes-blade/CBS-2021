@@ -6,7 +6,9 @@
 #include "searchNode.h"
 #include "search.h"
 #include "constr.h"
+#include "pairVert.h"
 
+#include <map>
 #include <vector>
 #include <unordered_map>
 
@@ -46,7 +48,7 @@ struct pair_hash final {
 class CTNode {
     public:
         std::vector<Path> paths;
-        double cost;
+        int cost;
         int maxTime;
         VertexConstrStruct vertexConstr;
         EdgeConstrStruct edgeConstr;
@@ -61,10 +63,10 @@ class CTNode {
         void insertEdge(int u, int v);
         void countCost(std::string heuristic);
         void countCAT();
-        double countPathCost(int i, std::string heuristic);
-        std::string findConflictType(Map& map, std::vector<Agent>& agents, Conflict& conflict, std::string heuristic);
-        Conflict findBestConflict(Map& map, std::vector<Agent>& agents, bool prioritizeConflicts, std::string heuristic);
-        int findNumOfConflicts(Map& map, std::vector<Agent>& agents, int agentCheck);
+        int countPathCost(int i, std::string heuristic);
+        std::string findConflictType(Map& map, bool dijkstra, std::map<pairVert, int, pvCompare>& distMap, std::vector<Agent>& agents, Conflict& conflict, std::string heuristic);
+        Conflict findBestConflict(Map& map, bool dijkstra, std::map<pairVert, int, pvCompare>& distMap, std::vector<Agent>& agents, bool prioritizeConflicts, bool useSymmetry, std::string heuristic, int horizon);
+        int findNumOfConflicts(Map& map, std::vector<Agent>& agents, int agentCheck, int horizon);
         bool operator< (CTNode &other);
         bool operator== (CTNode &other);
         bool operator!= (CTNode &other);
@@ -75,7 +77,7 @@ struct EventVertex {
     int agent;
     int v;
     int step;
-    bool type;
+    int type;
 
     EventVertex(int time, int agent, int v, int step, int type)
         : time(time)

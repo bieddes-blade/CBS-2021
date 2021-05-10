@@ -5,7 +5,9 @@
 #include "constr.h"
 #include "ctNode.h"
 #include "ctSolution.h"
+#include "pairVert.h"
 
+#include <cmath>
 #include <unordered_map>
 #include <vector>
 #include <tuple>
@@ -13,7 +15,7 @@
 #include <cstdlib>
 #include <climits>
 
-CTSolution::CTSolution(Map& map_read, std::vector<Agent>& agents_read, bool useDijkstraPrecalc_read, bool useCAT_read, std::string heuristic_read, bool prioritizeConflicts_read, bool useBypass_read, bool useFocal_read, double omega_read, bool printPaths_read) {
+CTSolution::CTSolution(Map& map_read, std::vector<Agent>& agents_read, bool useDijkstraPrecalc_read, bool useCAT_read, std::string heuristic_read, bool prioritizeConflicts_read, bool useBypass_read, bool useFocal_read, double omega_read, bool useSymmetry_read,  bool online_read, std::vector<std::vector<std::pair<int, int>>>& goalLocs_read, int horizon_read, int replanning_read, bool printPaths_read) {
     map = map_read;
     agents = agents_read;
     useDijkstraPrecalc = useDijkstraPrecalc_read;
@@ -23,7 +25,82 @@ CTSolution::CTSolution(Map& map_read, std::vector<Agent>& agents_read, bool useD
     useBypass = useBypass_read;
     useFocal = useFocal_read;
     omega = omega_read;
+    useSymmetry = useSymmetry_read;
+    online = online_read;
+    goalLocs = goalLocs_read;
+    horizon = horizon_read;
+    replanning = replanning_read;
     printPaths = printPaths_read;
+}
+
+std::map<pairVert, int, pvCompare> CTSolution::dijkstraPrecalc(Map& map) {
+    int INF = 1000 * 1000 * 1000;
+    int h = map.height;
+    int w = map.width;
+
+    std::map<pairVert, int, pvCompare> d;
+
+    for (int i = 0; i < h; ++i) {
+        for (int j = 0; j < w; ++ j) {
+            if (map.cellOnGrid(i, j) && map.cellIsTraversable(i, j)) {
+                // for each empty cell on the grid
+                // find distances to all other cells
+
+                pairVert s;
+                s.from = {i, j};
+                s.to = {i, j};
+
+                d[s] = 0;
+
+                std::set<std::pair<int, std::pair<int, int>>> q;
+                q.insert({d[s], {i, j}});
+
+                while (!q.empty()) {
+                    std::pair<int, int> v = q.begin()->second;
+                    q.erase(q.begin());
+
+                    for (int plus_i = -1; plus_i <= 1; ++plus_i) {
+                        for (int plus_j = -1; plus_j <= 1; ++plus_j) {
+                            if ((plus_i != 0 || plus_j != 0) && !(plus_i != 0 && plus_j != 0)) {
+                                if (map.cellOnGrid(v.first + plus_i, v.second + plus_j) && map.cellIsTraversable(v.first + plus_i, v.second + plus_j)) {
+
+                                    // found an empty neighbour cell
+                                    // add metric type later
+                                    std::pair<int, int> to = {v.first + plus_i, v.second + plus_j};
+                                    int len = 1;
+
+                                    pairVert s_v;
+                                    s_v.from = {i, j};
+                                    s_v.to = v;
+
+                                    if (d.find(s_v) == d.end()) {
+                                        d[s_v] = INF;
+                                    }
+
+                                    pairVert s_to;
+                                    s_to.from = {i, j};
+                                    s_to.to = to;
+
+                                    if (d.find(s_to) == d.end()) {
+                                        d[s_to] = INF;
+                                    }
+
+                                    // relaxation
+                                    if (d[s_v] + len < d[s_to]) {
+                                        q.erase({d[s_to], to});
+                                        d[s_to] = d[s_v] + len;
+                                        q.insert({d[s_to], to});
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    return d;
 }
 
 Path CTSolution::lowLevelSearch(CTNode node, int i) {
@@ -31,13 +108,7 @@ Path CTSolution::lowLevelSearch(CTNode node, int i) {
     // it uses search options (type of search, constraints etc) and returns paths
     // the paths may include conflicts
     Search search(map);
-
-    // precompute perfect heuristic
-    if (useDijkstraPrecalc) {
-        search.dijkstraPrecalc(map, node.vertexConstr, node.edgeConstr, agents[i]);
-    }
-
-    search.startSearch(map, node.vertexConstr, node.edgeConstr, node.conflictAvoidanceTable, agents[i], node.stateAgentMap, useDijkstraPrecalc, useFocal, omega);
+    search.startSearch(map, distMap, node.vertexConstr, node.edgeConstr, node.conflictAvoidanceTable, agents[i], node.stateAgentMap, useDijkstraPrecalc, useFocal, omega);
     return search.fullPath;
 }
 
@@ -66,23 +137,10 @@ std::vector<Path> CTSolution::highLevelSearch() {
         heap.pop();
 
         // find the best conflict in this node
-        Conflict conflict = best.findBestConflict(map, agents, prioritizeConflicts, heuristic);
+        Conflict conflict = best.findBestConflict(map, useDijkstraPrecalc, distMap, agents, prioritizeConflicts, useSymmetry, heuristic, horizon);
 
         // if there are no conflicts, we have found the goal node
         if (conflict.type == "none") {
-            std::cout << "Solution Cost: " << best.cost << "\n";
-            // if option printPaths is activated, we print out the path of each agent
-            if (printPaths) {
-                for (int agent = 0; agent < (best.paths).size(); ++agent) {
-                    std::cout << "agent " << agent + 1 << ": [ ";
-                    for (int i = 0; i < (best.paths[agent]).size(); ++i) {
-                        auto currentPair = (best.paths[agent])[i];
-                        std::cout << "[" << currentPair.first << ", " << currentPair.second << "] ";
-                    }
-                    std::cout << "]\n";
-                }
-            }
-
             return best.paths;
         }
 
@@ -120,14 +178,14 @@ std::vector<Path> CTSolution::highLevelSearch() {
 
             if (useBypass) {
                 // count old path cost and number of conflicts involving one agent
-                curConfNum = node.findNumOfConflicts(map, agents, agent);
+                curConfNum = node.findNumOfConflicts(map, agents, agent, horizon);
                 curPathCost = node.countPathCost(agent, heuristic);
             }
 
             // with a rectangular vertex conflict, we need to insert a barrier constraint
             // we count Rk and Rg and prohibit the agent ak from occupying all locations along the border of the rectangle
             // that is opposite of its start node at the timestep when ak would optimally reach the location
-            if (conflict.type == "rectangular") {
+            /*if (conflict.type == "rectangular") {
                 int a1 = (conflict.agents).first;
                 int a2 = (conflict.agents).second;
 
@@ -188,35 +246,37 @@ std::vector<Path> CTSolution::highLevelSearch() {
                 R_st = start_it + std::abs(start_ix - R_sx) + std::abs(start_iy - R_sy);
                 R_gt = start_it + std::abs(start_ix - R_gx) + std::abs(start_iy - R_gy);
 
-                if (agent == 1) {
+                if (agent_number == 1) {
                     if (R_ix == R_gx) {
                         for (int n = R_it; n <= R_gt; ++n) {
+                            //std::cout << "1 " << R_ix << " " << R_iy + n - R_it << " " << n << "\n";
                             node.vertexConstr[n].insert({R_ix, R_iy + n - R_it});
                         }
                     } else if (R_iy == R_gy) {
                         for (int n = R_it; n <= R_gt; ++n) {
+                            //std::cout << "2 " << R_ix + n - R_it << " " << R_iy << " " << n << "\n";
                             node.vertexConstr[n].insert({R_ix + n - R_it, R_iy});
                         }
                     }
                 } else {
                     if (R_jx == R_gx) {
                         for (int n = R_jt; n <= R_gt; ++n) {
+                            //std::cout << "3 " << R_jx << " " << R_jy + n - R_jt << " " << n << "\n";
                             node.vertexConstr[n].insert({R_jx, R_jy + n - R_jt});
                         }
                     } else if (R_jy == R_gy) {
                         for (int n = R_jt; n <= R_gt; ++n) {
+                            //std::cout << "4 " << R_jx + n - R_jt << " " << R_jy << " " << n << "\n";
                             node.vertexConstr[n].insert({R_jx + n - R_jt, R_jy});
                         }
                     }
                 }
-
-                node.vertexConstr[confTime].insert(conflict.v1);
-
+            */
 
 
             // with a vertex conflict, we only need to insert a constraint that doesn't allow an agent
             // to be in a certain place at a certain time
-            } else if (conflict.type == "vertex") {
+            if (conflict.type == "vertex") {
                 node.vertexConstr[confTime].insert(conflict.v1);
             
             // with an edge conflict, we insert a conflict tuple
@@ -238,7 +298,7 @@ std::vector<Path> CTSolution::highLevelSearch() {
             node.countCost(heuristic);
 
             if (useBypass) {
-                newConfNum = node.findNumOfConflicts(map, agents, agent);
+                newConfNum = node.findNumOfConflicts(map, agents, agent, horizon);
                 newPathCost = node.countPathCost(agent, heuristic);
 
                 // if the cost does not change and confNum decreases, we have found a helpful bypass!
@@ -266,6 +326,131 @@ std::vector<Path> CTSolution::highLevelSearch() {
     }
 
     // if we didn't find a solution
-    std::cout << "NO SOLUTION\n";
     return root.paths;
+}
+
+void CTSolution::solve() {
+    // precompute exact heuristic
+    if (useDijkstraPrecalc) {
+        distMap = dijkstraPrecalc(map);
+    }
+
+    if (!online) {
+        std::vector<Path> paths = highLevelSearch();
+
+        int cost = 0;
+        for (int i = 0; i < paths.size(); ++i) {
+            cost += paths[i].size() - 1;
+        }
+        std::cout << "Solution Cost: " << cost << "\n";
+
+        // if option printPaths is activated, we print out the path of each agent
+        if (printPaths) {
+            for (int agent = 0; agent < paths.size(); ++agent) {
+                std::cout << "agent " << agent + 1 << ": [ ";
+                for (int i = 0; i < paths[agent].size(); ++i) {
+                    auto currentPair = paths[agent][i];
+                    std::cout << "[" << currentPair.first << ", " << currentPair.second << "] ";
+                }
+                std::cout << "]\n";
+            }
+        }
+
+        return;
+    }
+
+    std::vector<std::vector<std::pair<int, int>>> constructedPaths(agents.size(), std::vector<std::pair<int, int>>());
+
+    // true = the agent completed all its tasks
+    std::vector<bool> done(agents.size(), false);
+    // how many goals has this agent visited
+    std::vector<int> last(agents.size(), 0);
+    // how many agents did this
+    int progress = 0;
+
+    while (progress < agents.size()) {
+        // assign goals to agents
+        for (int agent = 0; agent < agents.size(); ++agent) {
+            if (!done[agent]) {
+                int num = 0;
+                int dist = 0;
+                int cur_i = agents[agent].start_i;
+                int cur_j = agents[agent].start_j;
+
+                // first lets count min dist between assigned goals
+                while (num < agents[agent].fin_i.size()) {
+                    int gi = agents[agent].fin_i[num];
+                    int gj = agents[agent].fin_j[num];
+                    dist += std::abs(cur_i - gi) + std::abs(cur_j - gj);
+                    cur_i = gi;
+                    cur_j = gj;
+                    ++num;
+                }
+
+                // next lets add goals until (dist > replanning)
+                num = last[agent];
+                while (dist < replanning && num < goalLocs[agent].size()) {
+                    int gi = goalLocs[agent][num].first;
+                    int gj = goalLocs[agent][num].second;
+
+                    agents[agent].fin_i.push_back(gi);
+                    agents[agent].fin_j.push_back(gj);
+
+                    dist += std::abs(cur_i - gi) * map.hweight + std::abs(cur_j - gj);
+                    cur_i = gi;
+                    cur_j = gj;
+                    ++num;
+                }
+            }
+        }
+
+        // find paths
+        std::vector<Path> paths = highLevelSearch();
+
+        for (int agent = 0; agent < agents.size(); ++agent) {
+            if (!done[agent]) {
+                int step = 0;
+                int label = 0;
+                while (step < replanning && step < paths[agent].size()) {
+                    constructedPaths[agent].push_back(paths[agent][step]);
+                    if (paths[agent][step].first == agents[agent].fin_i[label] && paths[agent][step].second == agents[agent].fin_j[label]) {
+                        // at this moment the agent visited one of the goals
+                        ++label;
+                        ++last[agent];
+                        // if the agent visited all its goals
+                        if (last[agent] == goalLocs[agent].size()) {
+                            done[agent] = true;
+                            ++progress;
+                            break;
+                        }
+                    }
+                    ++step;
+                }
+                // update the starting point
+                if (!done[agent]) {
+                    agents[agent].start_i = paths[agent][step].first;
+                    agents[agent].start_j = paths[agent][step].second;
+                    agents[agent].fin_i.clear();
+                    agents[agent].fin_j.clear();
+                }
+            }
+        }
+    }
+
+    int cost = 0;
+    for (int i = 0; i < constructedPaths.size(); ++i) {
+        cost += constructedPaths[i].size() - 1;
+    }
+    std::cout << "Solution Cost: " << cost << "\n";
+
+    if (printPaths) {
+        for (int agent = 0; agent < agents.size(); ++agent) {
+            std::cout << "agent " << agent + 1 << ": [ ";
+            for (int i = 0; i < constructedPaths[agent].size(); ++i) {
+                auto currentPair = constructedPaths[agent][i];
+                std::cout << "[" << currentPair.first << ", " << currentPair.second << "] ";
+            }
+            std::cout << "]\n";
+        }
+    }
 }
