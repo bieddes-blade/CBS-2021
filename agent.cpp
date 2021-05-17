@@ -27,5 +27,6 @@ void Agent::getAgent(std::ifstream& agentFile, bool online) {
     std::mt19937 rng(dev());
     std::uniform_int_distribution<std::mt19937::result_type> dist6(1, 10);
 
-    speed = 1;//dist6(rng);
+    speed = 1;
+    //speed = dist6(rng); uncomment to use random speeds
 }

@@ -289,41 +289,40 @@ Conflict CTNode::findBestConflict(Map& map, bool dijkstra, std::map<pairVert, in
                     Conflict curConflict = Conflict("vertex", {a1, a2}, step1, step2, paths[a1][step1], std::pair<int, int>());
                     bestConflict = curConflict;
 
-                    // lets check if this is a cardinal rectangular conflict
-                    /*int start_ix = agents[a1].start_i;
-                    int start_iy = agents[a1].start_j;
-                    int goal_ix = agents[a1].fin_i;
-                    int goal_iy = agents[a1].fin_j;
+                    if (useSymmetry) {
+                        // lets check if this is a cardinal rectangular conflict
+                        int start_ix = agents[a1].start_i;
+                        int start_iy = agents[a1].start_j;
+                        int goal_ix = agents[a1].fin_i[0];
+                        int goal_iy = agents[a1].fin_j[0];
 
-                    int start_jx = agents[a2].start_i;
-                    int start_jy = agents[a2].start_j;
-                    int goal_jx = agents[a2].fin_i;
-                    int goal_jy = agents[a2].fin_j;
+                        int start_jx = agents[a2].start_i;
+                        int start_jy = agents[a2].start_j;
+                        int goal_jx = agents[a2].fin_i[0];
+                        int goal_jy = agents[a2].fin_j[0];
 
-                    int start_it = 0;
-                    int goal_it = paths[a1].size() - 1;
-                    int start_jt = 0;
-                    int goal_jt = paths[a2].size() - 1;
+                        int start_it = 0;
+                        int goal_it = paths[a1].size() - 1;
+                        int start_jt = 0;
+                        int goal_jt = paths[a2].size() - 1;
 
 
-                    if (std::abs(start_ix - goal_ix) + std::abs(start_iy - goal_iy) == goal_it - start_it && goal_it - start_it > 0) {
-                        if (std::abs(start_jx - goal_jx) + std::abs(start_jy - goal_jy) == goal_jt - start_jt && goal_jt - start_jt > 0) {
-                            if ((start_ix - goal_ix) * (start_jx - goal_jx) >= 0) {
-                                if ((start_iy - goal_iy) * (start_jy - goal_jy) >= 0) {
-                                    if ((start_ix - start_jx) * (goal_ix - goal_jx) <= 0) {
-                                        if ((start_iy - start_jy) * (goal_iy - goal_jy) <= 0) {
-                                            // agents a1 and a2 are involved in a cardinal rectangle conflict
-                                            if (useSymmetry) {
-                                                //std::cout << "FOUND ONE!\n";
+                        if (std::abs(start_ix - goal_ix) + std::abs(start_iy - goal_iy) == goal_it - start_it && goal_it - start_it > 0) {
+                            if (std::abs(start_jx - goal_jx) + std::abs(start_jy - goal_jy) == goal_jt - start_jt && goal_jt - start_jt > 0) {
+                                if ((start_ix - goal_ix) * (start_jx - goal_jx) >= 0) {
+                                    if ((start_iy - goal_iy) * (start_jy - goal_jy) >= 0) {
+                                        if ((start_ix - start_jx) * (goal_ix - goal_jx) <= 0) {
+                                            if ((start_iy - start_jy) * (goal_iy - goal_jy) <= 0) {
+                                                // agents a1 and a2 are involved in a cardinal rectangle conflict
                                                 curConflict.type = "rectangular";
+                                                return curConflict;
                                             }
-                                            return curConflict;
                                         }
                                     }
                                 }
                             }
                         }
-                    }*/
+                    }
 
                     // if PC is active, we check the type of the conflict
                     if (prioritizeConflicts == true) {

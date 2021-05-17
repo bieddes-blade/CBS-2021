@@ -3,31 +3,15 @@ import time
 import subprocess
 from subprocess import Popen, PIPE
 
-'''path_to_bin = "/Users/clarence/Desktop/multirobot/new_clean_code/try-multirobot"
-path_to_map = "/Users/clarence/Desktop/multirobot/maps/empty-16-16.map"
-paths_to_scen = "/Users/clarence/Desktop/multirobot/maps/empty-16-16-scen-even/empty-16-16-even-"'''
+path_to_bin = "/multirobot/new_clean_code/try-multirobot"
+path_to_map = "/multirobot/maps/warehouse-10-20-10-2-2.map"
+paths_to_scen = "/multirobot/maps/warehouse-scen-even/warehouse-10-20-10-2-2-even-"
+path_to_goals = "/multirobot/maps/check.goals"
 
-'''path_to_bin = "/Users/clarence/Desktop/multirobot/new_clean_code/try-multirobot"
-path_to_map = "/Users/clarence/Desktop/multirobot/maps/berlin_1_256.map"
-paths_to_scen = "/Users/clarence/Desktop/multirobot/maps/berlin-scen-even/Berlin_1_256-even-"'''
-
-path_to_bin = "/Users/clarence/Desktop/multirobot/new_clean_code/try-multirobot"
-path_to_map = "/Users/clarence/Desktop/multirobot/maps/warehouse-10-20-10-2-2.map"
-paths_to_scen = "/Users/clarence/Desktop/multirobot/maps/warehouse-scen-even/warehouse-10-20-10-2-2-even-"
-
-'''path_to_bin = "/Users/clarence/Desktop/multirobot/new_clean_code/try-multirobot"
-path_to_map = "/Users/clarence/Desktop/multirobot/maps/brc202d.map"
-paths_to_scen = "/Users/clarence/Desktop/multirobot/maps/brc202d-scen-even/brc202d-even-"'''
-
-'''path_to_bin = "/Users/clarence/Desktop/multirobot/new_clean_code/try-multirobot"
-path_to_map = "/Users/clarence/Desktop/multirobot/maps/check.map"
-paths_to_scen = "/Users/clarence/Desktop/multirobot/maps/check.scen"'''
-path_to_goals = "/Users/clarence/Desktop/multirobot/maps/check.goals"
-
-MAX_AGENTS = 10 # maximum number of agents
-MAX_SCEN = 1 # maximum number of scenarios
-MAX_FAILED = 4 # maximum consecutive failures
-TIME_OUT = 60 # time limit
+MAX_AGENTS = 100 # maximum number of agents
+MAX_SCEN = 25 # maximum number of scenarios
+MAX_FAILED = 3 # maximum consecutive failures
+TIME_OUT = 300 # time limit
 
 dijkstra_precalc = "false" # set true to use dijkstra precalc
 use_CAT = "true" # set true to use CAT
@@ -37,10 +21,11 @@ use_bypass = "true" # set true to use bypass
 use_ecbs = "false" # set true to use ecbs
 omega = "1" # choose suboptimality factor (only for ecbs)
 use_symm = "false" # set true to use symmetry breaking
-online = "true" # online setting with many goals or offline setting with one goal
-horizon = "100" # conflicts will be ignored after this number of steps
-replanning = "10" # number of timesteps before replanning
+online = "false" # online setting with many goals or offline setting with one goal
+horizon = "100000000" # conflicts will be ignored after this number of steps
+replanning = "100000000" # number of timesteps before replanning
 print_paths = "false" # set true to print paths for each agent
+
 
 success_rates = [] # percent of passed tests for each number of agents
 failed = [0] * MAX_SCEN # for counting consecutive failures
@@ -66,6 +51,7 @@ for agents in range(1, MAX_AGENTS + 1): # choose a number of agents
                 print("agents:", agents, "scenario:", cur_scen, "time:", "%.5f" % timeDelta, "result: FAILURE") # time limit exceeded
             else:
                 num_of_passed_tests += 1
+                failed[cur_scen] = 0
                 timeDelta = time.time() - timeStarted
                 print("agents:", agents, "scenario:", cur_scen, "time:", "%.5f" % timeDelta, "result: SUCCESS")
         else:

@@ -185,19 +185,19 @@ std::vector<Path> CTSolution::highLevelSearch() {
             // with a rectangular vertex conflict, we need to insert a barrier constraint
             // we count Rk and Rg and prohibit the agent ak from occupying all locations along the border of the rectangle
             // that is opposite of its start node at the timestep when ak would optimally reach the location
-            /*if (conflict.type == "rectangular") {
+            if (conflict.type == "rectangular") {
                 int a1 = (conflict.agents).first;
                 int a2 = (conflict.agents).second;
 
                 int start_ix = agents[a1].start_i;
                 int start_iy = agents[a1].start_j;
-                int goal_ix = agents[a1].fin_i;
-                int goal_iy = agents[a1].fin_j;
+                int goal_ix = agents[a1].fin_i[0];
+                int goal_iy = agents[a1].fin_j[0];
 
                 int start_jx = agents[a2].start_i;
                 int start_jy = agents[a2].start_j;
-                int goal_jx = agents[a2].fin_i;
-                int goal_jy = agents[a2].fin_j;
+                int goal_jx = agents[a2].fin_i[0];
+                int goal_jy = agents[a2].fin_j[0];
 
                 int start_it = 0;
                 int goal_it = node.paths[a1].size() - 1;
@@ -249,34 +249,29 @@ std::vector<Path> CTSolution::highLevelSearch() {
                 if (agent_number == 1) {
                     if (R_ix == R_gx) {
                         for (int n = R_it; n <= R_gt; ++n) {
-                            //std::cout << "1 " << R_ix << " " << R_iy + n - R_it << " " << n << "\n";
                             node.vertexConstr[n].insert({R_ix, R_iy + n - R_it});
                         }
                     } else if (R_iy == R_gy) {
                         for (int n = R_it; n <= R_gt; ++n) {
-                            //std::cout << "2 " << R_ix + n - R_it << " " << R_iy << " " << n << "\n";
                             node.vertexConstr[n].insert({R_ix + n - R_it, R_iy});
                         }
                     }
                 } else {
                     if (R_jx == R_gx) {
                         for (int n = R_jt; n <= R_gt; ++n) {
-                            //std::cout << "3 " << R_jx << " " << R_jy + n - R_jt << " " << n << "\n";
                             node.vertexConstr[n].insert({R_jx, R_jy + n - R_jt});
                         }
                     } else if (R_jy == R_gy) {
                         for (int n = R_jt; n <= R_gt; ++n) {
-                            //std::cout << "4 " << R_jx + n - R_jt << " " << R_jy << " " << n << "\n";
                             node.vertexConstr[n].insert({R_jx + n - R_jt, R_jy});
                         }
                     }
                 }
-            */
 
 
             // with a vertex conflict, we only need to insert a constraint that doesn't allow an agent
             // to be in a certain place at a certain time
-            if (conflict.type == "vertex") {
+            } else if (conflict.type == "vertex") {
                 node.vertexConstr[confTime].insert(conflict.v1);
             
             // with an edge conflict, we insert a conflict tuple
@@ -342,7 +337,7 @@ void CTSolution::solve() {
         for (int i = 0; i < paths.size(); ++i) {
             cost += paths[i].size() - 1;
         }
-        std::cout << "Solution Cost: " << cost << "\n";
+        //std::cout << "Solution Cost: " << cost << "\n";
 
         // if option printPaths is activated, we print out the path of each agent
         if (printPaths) {
@@ -441,7 +436,7 @@ void CTSolution::solve() {
     for (int i = 0; i < constructedPaths.size(); ++i) {
         cost += constructedPaths[i].size() - 1;
     }
-    std::cout << "Solution Cost: " << cost << "\n";
+    //std::cout << "Solution Cost: " << cost << "\n";
 
     if (printPaths) {
         for (int agent = 0; agent < agents.size(); ++agent) {
