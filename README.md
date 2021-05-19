@@ -106,11 +106,11 @@ There are four types of conflicts: a vertex conflict, where agent[0] and agent[1
 
 #### ctNode.h
 
-A file describing CTNode class, a class for constraint tree nodes. There are some helper types and structures: `VertexConstrStruct` for vertex constraints; `EdgeConstrStruct` for edge constraints; `Path` for paths (each step is a `std::pair<int, int>`); `StateMap`, an unordered map, where the key is a tuple (an agent's state, `i j t`) and the value is a set of agents in that state; `KeyFour`, `KeyFourHash`, `KeyFourEqual` and `pair_hash` for hashing and comparison purposes; `EventVertex` and `EventEdge` for fast conflict detection.
+A file describing the CTNode class, a class for constraint tree nodes. There are some helper types and structures: `VertexConstrStruct` for vertex constraints; `EdgeConstrStruct` for edge constraints; `Path` for paths (each step is a `std::pair<int, int>`); `StateMap`, an unordered map, where the key is a tuple (an agent's state, `i j t`) and the value is a set of agents in that state; `KeyFour`, `KeyFourHash`, `KeyFourEqual` and `pair_hash` for hashing and comparison purposes; `EventVertex` and `EventEdge` for fast conflict detection.
 
 #### ctNode.cpp
 
-A file describing CTNode class. It has the following fields:
+A file describing the CTNode class. It has the following fields:
 
 - `std::vector<Path> paths`, a vector of paths for each agent,
 - `int cost`, the cost of this solution,
@@ -129,16 +129,44 @@ These are the CTNode functions:
 - `void countCost(std::string heuristic)`, for counting the solution cost,
 - `void countCAT()`, for filling in the CAT,
 - `int countPathCost(int i, std::string heuristic)`, for counting the cost of a single path,
-- `std::string findConflictType(Map& map, bool dijkstra, std::map<pairVert, int, pvCompare>& distMap, std::vector<Agent>& agents, Conflict& conflict, std::string heuristic)`, a function returning the type of a conflict: cardinal, semi-cardinal or none,
+- `std::string findConflictType(Map& map, bool dijkstra, std::map<pairVert, int, pvCompare>& distMap, std::vector<Agent>& agents, Conflict& conflict, std::string heuristic)`, a function receiving a conflict and returning its type: cardinal, semi-cardinal or none,
 - `Conflict findBestConflict(Map& map, bool dijkstra, std::map<pairVert, int, pvCompare>& distMap, std::vector<Agent>& agents, bool prioritizeConflicts, bool useSymmetry, std::string heuristic, int horizon)`, a function for finding the best conflict to split on,
-- i`nt findNumOfConflicts(Map& map, std::vector<Agent>& agents, int agentCheck, int horizon)`, a function counting the number of conflicts for some optimizations and heuristics,
+- `int findNumOfConflicts(Map& map, std::vector<Agent>& agents, int agentCheck, int horizon)`, a function counting the number of conflicts for some optimizations and heuristics,
 - `bool operator< (CTNode &other)`,
 - `bool operator== (CTNode &other)`,
 - `bool operator!= (CTNode &other)`.
 
 #### ctSolution.cpp
 
+A file describing the CTSolution class. It has the following fields:
+
+- `std::priority_queue<CTNode, std::vector<CTNode>, CompareCBS> heap`, a priority queue for choosing the best CTNode,
+- `Map map`,
+- `std::vector<Agent>` agents,
+- `std::map<pairVert, int, pvCompare> distMap`, a structure used to store distances between each pair of empty cells in exact heuristic precomputation,
+- bool useDijkstraPrecalc,
+- bool useCAT,
+- std::string heuristic,
+- bool prioritizeConflicts,
+- bool useBypass,
+- bool useFocal,
+- double omega,
+- bool useSymmetry,
+- bool online,
+- `std::vector<std::vector<std::pair<int, int>>> goalLocs`, the goal locations for the online setting,
+- int horizon,
+- int replanning,
+- bool printPaths.
+
+The main function is `solve()`. It runs the precomputation and is in charge of running MAPF instances - one instance in the offline setting and many instances in the online setting. It prints the cost of the solution and can return valid paths. The other functions are
+
+- `std::map<pairVert, int, pvCompare> dijkstraPrecalc(Map& map)`,
+- `Path lowLevelSearch(CTNode node, int i)`, the low level of CBS which returns paths for a single agent,
+- `std::vector<Path> highLevelSearch()`, the high level of CBS which chooses nodes in the constraint tree and imposes constraints on the agents.
+
 #### ctSolution.h
+
+A file describing the CTSolution class. Includes a comparator for comparing constraint tree nodes by cost.
 
 #### main.cpp
 
