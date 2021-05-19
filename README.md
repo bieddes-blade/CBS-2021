@@ -57,4 +57,52 @@ A goals file contains additional goals for agents in the online setting. Every l
 
 ## Code structure
 
-This repository contains 
+This repository contains the following files:
+
+#### agent.cpp
+
+A file describing the agent class. `Agent::Agent(int agentId)` describes how an agent is initialized: its starting point (start_i,start_j) equals (-1,-1), the function receives its id as a parameter and its speed equals 1. `Agent::getAgent(std::ifstream& agentFile, bool online)` is a helper function for reading agent parameters from a scenario file. If `online == true`, the goal file is parsed. Otherwise, only one goal point is read from the scenario file. The agent's speed is chosen randomly.
+
+#### agent.h
+
+A file describing the agent class. The type of fin_i and fin_j is `std::vector<int>`: while each agent has only one starting location, it can have multiple goal locations.
+
+#### call-multirobot.py
+
+A file to make running the executable with different parameters easier. Sets up a timer for each map-scenario combination, kills the MAPF solver, if it takes too much time. For each number of agents from 1 to 100, the algorithm is tested on 25 scenarios. Then, the percentage of successfully executed scenarios (success rate) is counted.
+
+#### check.goals
+
+A dummy goals file for two agents.
+
+#### check.map
+
+A dummy 4x5 map.
+
+#### check.scen
+
+A dummy scenario file for two agents.
+
+#### constr.h
+
+#### ctNode.cpp
+
+#### ctNode.h
+
+#### ctSolution.cpp
+
+#### ctSolution.h
+
+#### main.cpp
+
+#### map.cpp
+
+#### map.h
+
+#### pairVert.h
+
+#### search.cpp
+
+#### search.h
+
+#### searchNode.h
