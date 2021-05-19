@@ -1,5 +1,7 @@
 # CBS-2021
 
+## Running the code
+
 If you'd like to use this code, please:
 1) compile it (for ex., g++ main.cpp map.cpp agent.cpp ctNode.cpp ctSolution.cpp search.cpp -o try-multirobot -std=c++0x),
 2) specify the parameters in call-multirobot.py,
@@ -30,3 +32,11 @@ The variables include:
 - horizon (conflicts will be ignored after this number of steps),
 - replanning (the number of timesteps before replanning),
 - print_paths (set true to print paths for each agent).
+
+## More on file formats
+
+...
+
+## Code structure
+
+...
