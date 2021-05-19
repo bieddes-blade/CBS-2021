@@ -144,21 +144,21 @@ A file describing the CTSolution class. It has the following fields:
 - `Map map`,
 - `std::vector<Agent> agents`,
 - `std::map<pairVert, int, pvCompare> distMap`, a structure used to store distances between each pair of empty cells in exact heuristic precomputation,
-- `bool useDijkstraPrecalc`,
-- `bool useCAT`,
-- `std::string heuristic`,
-- `bool prioritizeConflicts`,
-- `bool useBypass`,
-- `bool useFocal`,
-- `double omega`,
-- `bool useSymmetry`,
-- `bool online`,
+- `bool useDijkstraPrecalc`, set true to enable exact heuristic precomputation (this algorithm is very time-intensive and should be used on smaller maps),
+- `bool useCAT`, set true to enable CAT,
+- `std::string heuristic`, choose heuristic: normal, normal_diagonal, number_of_conflicts, number_of_conflicting_agents, number_of_pairs, vertex_cover, 
+- `bool prioritizeConflicts`, set true to prioritize cardinal and semi-cardinal conflicts. Splits will be done on cardinal, non-cardinal and other conflicts, in this order,
+- `bool useBypass`, set true to look for helpful bypasses and reduce the number of nodes in the constraint tree,
+- `bool useFocal`, set true to use focal search (for suboptimal CBS),
+- `double omega`, if focal search is enabled, the solver will return solutions with cost <= optimal cost * omega,
+- `bool useSymmetry`, set true to use symmetry breaking constraints. Only works with Manhattan distances,
+- `bool online`, set true to use replanning and read goal locations from the goal file,
 - `std::vector<std::vector<std::pair<int, int>>> goalLocs`, the goal locations for the online setting,
-- `int horizon`,
-- `int replanning`,
-- `bool printPaths`.
+- `int horizon`, conflicts will be ignored after this number of steps (works in both offline and online settings),
+- `int replanning`, paths will be replanned after this number of steps (for the online setting),
+- `bool printPaths`, set true to printed out paths for each agent.
 
-The main function is `solve()`. It runs the precomputation and is in charge of running MAPF instances - one instance in the offline setting and many instances in the online setting. It prints the cost of the solution and can return valid paths. The other functions are
+The main function is `solve()`. It runs the precomputation and is in charge of running MAPF instances - one instance in the offline setting and many instances in the online setting. It prints the cost of the solution and valid paths, if `printPaths` is set to true. The other functions are
 
 - `std::map<pairVert, int, pvCompare> dijkstraPrecalc(Map& map)`,
 - `Path lowLevelSearch(CTNode node, int i)`, the low level of CBS which returns paths for a single agent,
