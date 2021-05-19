@@ -142,21 +142,21 @@ A file describing the CTSolution class. It has the following fields:
 
 - `std::priority_queue<CTNode, std::vector<CTNode>, CompareCBS> heap`, a priority queue for choosing the best CTNode,
 - `Map map`,
-- `std::vector<Agent>` agents,
+- `std::vector<Agent> agents`,
 - `std::map<pairVert, int, pvCompare> distMap`, a structure used to store distances between each pair of empty cells in exact heuristic precomputation,
-- bool useDijkstraPrecalc,
-- bool useCAT,
-- std::string heuristic,
-- bool prioritizeConflicts,
-- bool useBypass,
-- bool useFocal,
-- double omega,
-- bool useSymmetry,
-- bool online,
+- `bool useDijkstraPrecalc`,
+- `bool useCAT`,
+- `std::string heuristic`,
+- `bool prioritizeConflicts`,
+- `bool useBypass`,
+- `bool useFocal`,
+- `double omega`,
+- `bool useSymmetry`,
+- `bool online`,
 - `std::vector<std::vector<std::pair<int, int>>> goalLocs`, the goal locations for the online setting,
-- int horizon,
-- int replanning,
-- bool printPaths.
+- `int horizon`,
+- `int replanning`,
+- `bool printPaths`.
 
 The main function is `solve()`. It runs the precomputation and is in charge of running MAPF instances - one instance in the offline setting and many instances in the online setting. It prints the cost of the solution and can return valid paths. The other functions are
 
@@ -169,6 +169,11 @@ The main function is `solve()`. It runs the precomputation and is in charge of r
 A file describing the CTSolution class. Includes a comparator for comparing constraint tree nodes by cost.
 
 #### main.cpp
+
+The main file of this code. It parses the parameters and the files. There are two functions:
+- `std::vector<Agent> readAgents(std::ifstream& agentFile, int size, bool online)` and
+- `std::vector<std::vector<std::pair<int, int>>> readGoals(std::ifstream& goalFile, int size)`
+for parsing the agents' staring and finising locations from the scenario and the goals file.
 
 #### map.cpp
 
