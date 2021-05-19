@@ -4,12 +4,12 @@
 
 If you'd like to use this code, please:
 1) compile it (for ex., g++ main.cpp map.cpp agent.cpp ctNode.cpp ctSolution.cpp search.cpp -o try-multirobot -std=c++0x),
-2) specify the parameters in call-multirobot.py,
+2) specify the parameters in [call-multirobot.py](call-multirobot.py),
 3) and run it with python3.
 
-The code uses maps and scenarios in this format: https://movingai.com/benchmarks/mapf/index.html.
+The code uses maps and scenarios from [Moving AI Lab](https://movingai.com/benchmarks/mapf/index.html).
 
-An example of a map can be found in the file check.map (same with examples of scenario and goal files: check.scen, check.goals). 
+An example of a map can be found in the file [check.map](check.map) (same with examples of scenario and goal files: [check.scen](check.scen), [check.goals](check.goals)). 
 In call-multirobot.py, one can choose which optimizations are going to be tested and enter the parameter values. 
 The variables include:
 - path_to_bin (path to the executable), 
