@@ -92,7 +92,7 @@ A file describing Constraint and Conflict structures. A constraint has the follo
 - `std::pair<int, int> v1`,
 - `std::pair<int, int> v2`.
 
-There are two types of constraints: a vertex constraint, where the agent is not allowed to be in v1 at a certain time, and an edge constraint, where the agent is not allowed to be in vertex v1 and try to reach vertex v2 at a certain time.
+There are two types of constraints: a vertex constraint, where the agent is not allowed to be in v1 at a certain time, and an edge constraint, where the agent is not allowed to be in vertex v1 and try to reach vertex v2 at a certain time. Barrier constraints consist of vertex constraints.
 
 A conflict has the following fields:
 - `std::string type`,
@@ -104,9 +104,37 @@ A conflict has the following fields:
 
 There are four types of conflicts: a vertex conflict, where agent[0] and agent[1] collided in v1 at a certain time; an edge conflict, where agent[0] was traveling from v1 to v2 at a certain time, agent2 was traveling from v2 to v1; type none conflict (no conflict) and a rectangle conflict.
 
+#### ctNode.h
+
+A file describing CTNode class, a class for constraint tree nodes. There are some helper types and structures: `VertexConstrStruct` for vertex constraints; `EdgeConstrStruct` for edge constraints; `Path` for paths (each step is a `std::pair<int, int>`); `StateMap`, an unordered map, where the key is a tuple (an agent's state, `i j t`) and the value is a set of agents in that state; `KeyFour`, `KeyFourHash`, `KeyFourEqual` and `pair_hash` for hashing and comparison purposes; `EventVertex` and `EventEdge` for fast conflict detection.
+
 #### ctNode.cpp
 
-#### ctNode.h
+A file describing CTNode class. It has the following fields:
+
+- `std::vector<Path> paths`, a vector of paths for each agent,
+- `int cost`, the cost of this solution,
+- `int maxTime`, a constant used to create constraint structures,
+- `VertexConstrStruct vertexConstr`, vertex constrains, imposed on the agents in this CTNode,
+- `EdgeConstrStruct edgeConstr`, edge constrains, imposed on the agents in this CTNode,
+- `ConfMap conflictAvoidanceTable`, to count how many agents were in each state,
+- `StateMap stateAgentMap`, to store which agents were in each state,
+- `bool** graph`, for the vertex cover heuristic.
+
+These are the CTNode functions:
+
+- `bool isCover(int V, int k, int E)`, for the vertex cover heuristic,
+- `int findMinCover(int n, int m)`, for the vertex cover heuristic,
+- `void insertEdge(int u, int v)`, for the vertex cover heuristic,
+- `void countCost(std::string heuristic)`, for counting the solution cost,
+- `void countCAT()`, for filling in the CAT,
+- `int countPathCost(int i, std::string heuristic)`, for counting the cost of a single path,
+- `std::string findConflictType(Map& map, bool dijkstra, std::map<pairVert, int, pvCompare>& distMap, std::vector<Agent>& agents, Conflict& conflict, std::string heuristic)`, a function returning the type of a conflict: cardinal, semi-cardinal or none,
+- `Conflict findBestConflict(Map& map, bool dijkstra, std::map<pairVert, int, pvCompare>& distMap, std::vector<Agent>& agents, bool prioritizeConflicts, bool useSymmetry, std::string heuristic, int horizon)`, a function for finding the best conflict to split on,
+- i`nt findNumOfConflicts(Map& map, std::vector<Agent>& agents, int agentCheck, int horizon)`, a function counting the number of conflicts for some optimizations and heuristics,
+- `bool operator< (CTNode &other)`,
+- `bool operator== (CTNode &other)`,
+- `bool operator!= (CTNode &other)`.
 
 #### ctSolution.cpp
 
