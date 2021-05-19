@@ -61,7 +61,7 @@ This repository contains the following files:
 
 #### agent.cpp
 
-A file describing the agent class. `Agent::Agent(int agentId)` describes how an agent is initialized: its starting point (start_i,start_j) equals (-1,-1), the function receives its id as a parameter and its speed equals 1. `Agent::getAgent(std::ifstream& agentFile, bool online)` is a helper function for reading agent parameters from a scenario file. If `online == true`, the goal file is parsed. Otherwise, only one goal point is read from the scenario file. The agent's speed is chosen randomly.
+A file describing the Agent class. `Agent::Agent(int agentId)` describes how an agent is initialized: its starting point (start_i,start_j) equals (-1,-1), the function receives its id as a parameter and its speed equals 1. `Agent::getAgent(std::ifstream& agentFile, bool online)` is a helper function for reading agent parameters from a scenario file. If `online == true`, the goal file is parsed. Otherwise, only one goal point is read from the scenario file. The agent's speed is chosen randomly.
 
 #### agent.h
 
@@ -84,6 +84,25 @@ A dummy 4x5 map.
 A dummy scenario file for two agents.
 
 #### constr.h
+
+A file describing Constraint and Conflict structures. A constraint has the following fields:
+- `std::string type`,
+- `int agent`,
+- `int time`,
+- `std::pair<int, int> v1`,
+- `std::pair<int, int> v2`.
+
+There are two types of constraints: a vertex constraint, where the agent is not allowed to be in v1 at a certain time, and an edge constraint, where the agent is not allowed to be in vertex v1 and try to reach vertex v2 at a certain time.
+
+A conflict has the following fields:
+- `std::string type`,
+- `std::pair<int, int> agents`,
+- `int time1`,
+- `int time2`,
+- `std::pair<int, int> v1`,
+- `std::pair<int, int> v2`.
+
+There are four types of conflicts: a vertex conflict, where agent[0] and agent[1] collided in v1 at a certain time; an edge conflict, where agent[0] was traveling from v1 to v2 at a certain time, agent2 was traveling from v2 to v1; type none conflict (no conflict) and a rectangle conflict.
 
 #### ctNode.cpp
 
