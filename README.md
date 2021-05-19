@@ -3,7 +3,7 @@
 ## Running the code
 
 If you'd like to use this code, please:
-1) compile it (for ex., g++ main.cpp map.cpp agent.cpp ctNode.cpp ctSolution.cpp search.cpp -o try-multirobot -std=c++0x),
+1) compile it (for example, ```g++ main.cpp map.cpp agent.cpp ctNode.cpp ctSolution.cpp search.cpp -o try-multirobot -std=c++0x```),
 2) specify the parameters in [call-multirobot.py](call-multirobot.py),
 3) and run it with python3.
 
