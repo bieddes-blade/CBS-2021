@@ -35,8 +35,26 @@ The variables include:
 
 ## More on file formats
 
-...
+All maps begin with the lines:
+
+```
+type octile
+height y
+width x
+map
+```
+
+where y and x are the respective height and width of the map.
+
+The map data is store as an ASCII grid. The upper-left corner of the map is (0,0). The following characters are possible:
+
+- `. G S W` - passable terrain,
+- `@ O T` - out of bounds or unpassable terrain.
+
+A scenario is a text file with a list of start and finish points for each agent. Each line of a scenario has 9 fields: bucket, map, map width, map height, start x-coordinate, start y-coordinate, goal x-coordinate, goal y-coordinate, optimal length. The optimal path length is assuming sqrt(2) diagonal costs.
+
+A goals file contains additional goals for agents in the online setting. Every line contains a list of goal x-coordinates and goal y-coordinates, followed by -1.
 
 ## Code structure
 
-...
+This repository contains 
