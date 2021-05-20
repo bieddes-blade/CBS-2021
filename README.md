@@ -179,27 +179,54 @@ for parsing the agents' starting and finishing locations from the scenario and t
 
 A file describing the Map class. It has the following fields:
 
+- `int height`,
+- `int width`,
+- `int** grid`, the map itself as a matrix with empty and blocked cells,
+- `std::string metricType`, default is Manhattan. Determines which metric will be used to count path costs at the low level (diagonal, manhattan, euclidean or chebyshev),
+- `int hweight`, determines the importance of h values in calculating distances.
 
-int height;
-int width;
-int** grid;
-std::string metricType;
-int hweight;
+These are the Map functions:
 
-Map();
-
-void getMapOptions(std::ifstream& mapFile);
-void getMapGrid(std::ifstream& mapFile);
-bool cellOnGrid(int i, int j) const;
-bool cellIsTraversable(int i, int j) const;
+- `void getMapOptions(std::ifstream& mapFile)`, a function to parse map parameters,
+- `void getMapGrid(std::ifstream& mapFile)`, a function to parse the ASCII grid,
+- `bool cellOnGrid(int i, int j) const`, a function to check if cell (i,j) is out of bounds,
+- `bool cellIsTraversable(int i, int j) const`, a function to check if cell (i,j) is empty.
 
 #### [map.h](map.h)
 
+A file describing the Map class. To compare the solution's returned cost to the optimal cost from [Moving AI](https://movingai.com/benchmarks/mapf/index.html) benchmarks, choose `metricType = 'diagonal'`. To be able to use all optimizations, including symmetry breaking constraints, choose `metricType = 'manhattan'`.
+
 #### [pairVert.h](pairVert.h)
 
-#### [search.cpp](search.cpp)
+A file describing the pairVert structure for storing pairs of vertices. It has two fields, `std::pair<int, int> from` and `std::pair<int, int> to`. The file contains a comparator `pvCompare` for comparing pairVert.
 
 #### [search.h](search.h)
 
+A file describing the Search class, which is an instance of a low-level A* search. There are some helper types and structures: `VertexConstrStruct` for vertex constraints; `EdgeConstrStruct` for edge constraints; `Path` for paths (each step is a `std::pair<int, int>`); and `StateMap`, an unordered map, where the key is a tuple (an agent's state, `i j t`) and the value is a set of agents in that state. The file contains two comparators, `bool CompareAStar(const SearchNode& one, const SearchNode& two)` and `bool CompareFocal(const SearchNode& one, const SearchNode& two)`. The first one is used in basic A* to compare nodes in `OPEN` by their f-value. The second one is used in the ECBS Focal search and compares nodes by the number of conflicting agents in the partial paths leading to these nodes.
+
+#### [search.cpp](search.cpp)
+
+A file describing the Search class. It contains the following functions:
+
+- `bool checkVertexConstr(int i, int j, int t, VertexConstrStruct& vertexConstr)`, to check if a vertex is restricted for the current agent,
+- `bool checkEdgeConstr(int i1, int j1, int i2, int j2, int time, EdgeConstrStruct& edgeConstr)`, to check if an edge is restricted for the current agent,
+- `double computeHFromCellToCell(Map& map, int i1, int j1, std::vector<int> i2, std::vector<int> j2, int label, bool dijkstra, std::map<pairVert, int, pvCompare>& distMap)`, computes the h-value between (i1,j1) and (i2,j2). In the offline setting, those are two points: an arbitrary point (i1,j1) and a goal point (i2,j2). In the online setting, the h-value of (i1,j1) equals the distance from the location of the node to the next goal location plus the sum of the distances between consecutive future goal locations in the goal location sequence,
+- `void startSearch(Map& map, std::map<pairVert, int, pvCompare>& distMap, VertexConstrStruct& vertexConstr, EdgeConstrStruct& edgeConstr, ConfMap& conflictAvoidanceTable, Agent& agent, StateMap& states, bool useDijkstra, bool useFocal, double omega)`, a function that runs the search (basic A* or Multi-label A*),
+- `std::list<SearchNode> findSuccessors(SearchNode& curNode, Map& map, VertexConstrStruct& vertexConstr, EdgeConstrStruct& edgeConstr, Agent& agent, bool dijkstra, std::map<pairVert, int, pvCompare>& distMap)`, to find successors of the node (neighbouring cells that are empty and aren't restricted for the current agent),
+- `void makePartPath(SearchNode curNode, SearchNode startNode)`, to construct a compressed path,
+- `void makeFullPath()`, to construct a full map,
+- `double diagonal(Map& map, int i1, int j1, int i2, int j2)`, 
+- `double manhattan(Map& map, int i1, int j1, int i2, int j2)`,
+- `double euclidean(Map& map, int i1, int j1, int i2, int j2)`,
+- `double chebyshev(Map& map, int i1, int j1, int i2, int j2)`.
+
 #### [searchNode.h](searchNode.h)
 
+A file describing the searchNode structure. It contains a type `KeyThree` and structures `KeyHash` and `KeyEqual` to hash and compare states (i,j,t). `typedef std::unordered_map<KeyThree, int, KeyHash, KeyEqual> ConfMap` is a type for counting the ECBS heuristic, the number of pairs of agents that have at least one conflict between them, considering the partial path up to node for the agent that the low level is planning for. A searchNode has the following fields:
+
+- `int i, j, t`, the current state-time,
+- `int numCAT`, the value from CAT,
+- `std::set<int> confAgents`, described above,
+- `double f, g, h`, f-, g- (the cost of the path from the start node to the current node) and h-values (a heuristic function that estimates the cost of the cheapest path from the current node to the goal) of the node. f(n) = g(n) + h(n),
+- `SearchNode *parent`, the state-time previous to the current one,
+- `int label`, the number of goal locations in the goal location sequence that the corresponding path from the root node to the current node has already visited.
