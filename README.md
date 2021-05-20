@@ -59,31 +59,31 @@ A goals file contains additional goals for agents in the online setting. Every l
 
 This repository contains the following files:
 
-#### agent.cpp
+#### [agent.cpp](agent.cpp)
 
 A file describing the Agent class. `Agent::Agent(int agentId)` describes how an agent is initialized: its starting point (start_i,start_j) equals (-1,-1), the function receives its id as a parameter and its speed equals 1. `Agent::getAgent(std::ifstream& agentFile, bool online)` is a helper function for reading agent parameters from a scenario file. If `online == true`, the goal file is parsed. Otherwise, only one goal point is read from the scenario file. The agent's speed is chosen randomly.
 
-#### agent.h
+#### [agent.h](agent.h)
 
 A file describing the agent class. The type of fin_i and fin_j is `std::vector<int>`: while each agent has only one starting location, it can have multiple goal locations.
 
-#### call-multirobot.py
+#### [call-multirobot.py](call-multirobot.py)
 
 A file to make running the executable with different parameters easier. Sets up a timer for each map-scenario combination, kills the MAPF solver, if it takes too much time. For each number of agents from 1 to 100, the algorithm is tested on 25 scenarios. Then, the percentage of successfully executed scenarios (success rate) is counted.
 
-#### check.goals
+#### [check.goals](check.goals)
 
 A dummy goals file for two agents.
 
-#### check.map
+#### [check.map](check.map)
 
 A dummy 4x5 map.
 
-#### check.scen
+#### [check.scen](check.scen)
 
 A dummy scenario file for two agents.
 
-#### constr.h
+#### [constr.h](constr.h)
 
 A file describing Constraint and Conflict structures. A constraint has the following fields:
 - `std::string type`,
@@ -104,11 +104,11 @@ A conflict has the following fields:
 
 There are four types of conflicts: a vertex conflict, where agent[0] and agent[1] collided in v1 at a certain time; an edge conflict, where agent[0] was traveling from v1 to v2 at a certain time, agent2 was traveling from v2 to v1; type none conflict (no conflict) and a rectangle conflict.
 
-#### ctNode.h
+#### [ctNode.h](ctNode.h)
 
 A file describing the CTNode class, a class for constraint tree nodes. There are some helper types and structures: `VertexConstrStruct` for vertex constraints; `EdgeConstrStruct` for edge constraints; `Path` for paths (each step is a `std::pair<int, int>`); `StateMap`, an unordered map, where the key is a tuple (an agent's state, `i j t`) and the value is a set of agents in that state; `KeyFour`, `KeyFourHash`, `KeyFourEqual` and `pair_hash` for hashing and comparison purposes; `EventVertex` and `EventEdge` for fast conflict detection.
 
-#### ctNode.cpp
+#### [ctNode.cpp](ctNode.cpp)
 
 A file describing the CTNode class. It has the following fields:
 
@@ -136,7 +136,7 @@ These are the CTNode functions:
 - `bool operator== (CTNode &other)`,
 - `bool operator!= (CTNode &other)`.
 
-#### ctSolution.cpp
+#### [ctSolution.cpp](ctSolution.cpp)
 
 A file describing the CTSolution class. It has the following fields:
 
@@ -164,25 +164,42 @@ The main function is `solve()`. It runs the precomputation and is in charge of r
 - `Path lowLevelSearch(CTNode node, int i)`, the low level of CBS which returns paths for a single agent,
 - `std::vector<Path> highLevelSearch()`, the high level of CBS which chooses nodes in the constraint tree and imposes constraints on the agents.
 
-#### ctSolution.h
+#### [ctSolution.h](ctSolution.h)
 
 A file describing the CTSolution class. Includes a comparator for comparing constraint tree nodes by cost.
 
-#### main.cpp
+#### [main.cpp](main.cpp)
 
 The main file of this code. It parses the parameters and the files. There are two functions:
 - `std::vector<Agent> readAgents(std::ifstream& agentFile, int size, bool online)` and
 - `std::vector<std::vector<std::pair<int, int>>> readGoals(std::ifstream& goalFile, int size)`
-for parsing the agents' staring and finising locations from the scenario and the goals file.
+for parsing the agents' starting and finishing locations from the scenario and the goals files.
 
-#### map.cpp
+#### [map.cpp](map.cpp)
 
-#### map.h
+A file describing the Map class. It has the following fields:
 
-#### pairVert.h
 
-#### search.cpp
+int height;
+int width;
+int** grid;
+std::string metricType;
+int hweight;
 
-#### search.h
+Map();
 
-#### searchNode.h
+void getMapOptions(std::ifstream& mapFile);
+void getMapGrid(std::ifstream& mapFile);
+bool cellOnGrid(int i, int j) const;
+bool cellIsTraversable(int i, int j) const;
+
+#### [map.h](map.h)
+
+#### [pairVert.h](pairVert.h)
+
+#### [search.cpp](search.cpp)
+
+#### [search.h](search.h)
+
+#### [searchNode.h](searchNode.h)
+
