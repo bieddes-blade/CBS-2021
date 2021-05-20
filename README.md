@@ -214,7 +214,7 @@ A file describing the Search class. It contains the following functions:
 - `void startSearch(Map& map, std::map<pairVert, int, pvCompare>& distMap, VertexConstrStruct& vertexConstr, EdgeConstrStruct& edgeConstr, ConfMap& conflictAvoidanceTable, Agent& agent, StateMap& states, bool useDijkstra, bool useFocal, double omega)`, a function that runs the search (basic A* or Multi-label A*),
 - `std::list<SearchNode> findSuccessors(SearchNode& curNode, Map& map, VertexConstrStruct& vertexConstr, EdgeConstrStruct& edgeConstr, Agent& agent, bool dijkstra, std::map<pairVert, int, pvCompare>& distMap)`, to find successors of the node (neighbouring cells that are empty and aren't restricted for the current agent),
 - `void makePartPath(SearchNode curNode, SearchNode startNode)`, to construct a compressed path,
-- `void makeFullPath()`, to construct a full map,
+- `void makeFullPath()`, to construct a full path,
 - `double diagonal(Map& map, int i1, int j1, int i2, int j2)`, 
 - `double manhattan(Map& map, int i1, int j1, int i2, int j2)`,
 - `double euclidean(Map& map, int i1, int j1, int i2, int j2)`,
