@@ -4,7 +4,7 @@
 
 CBS (Conflict Based Search) is an algorithm for solving multi-agent pathplanning problems. In the multi-agent path finding (MAPF) problem, we are given a graph and a set of agents, each with its own start and finish point. The task is to construct a set of collision-free paths in such a way that agents reach their destinations as effectively as possible. In the classic formulation of the problem, time is discrete. At each time step an agent can either move to a neighboring location or wait in its current location. Both actions take exactly one time step. But in real life applications, agents often move at different speeds. Moreover, in practice, agents continuously receive new tasks instead of receiving a single task and disappearing after its completion. In this repository we present an open-source implementation of a MAPF solver where agents are constantly engaged with new goal locations and move at different speeds.
 
-[Two MAPF problems](https://github.com/julia-rovnik/CBS-2021/blob/2d73f2638a5845f9d570d4686f84562a9d327006/blob/img/graph.png)
+[Two MAPF problems](https://github.com/julia-rovnik/CBS-2021/blob/2d73f2638a5845f9d570d4686f84562a9d327006/blob/img/graph.png?raw=true)
 
 ## Running the code
 
