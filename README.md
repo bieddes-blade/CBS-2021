@@ -6,6 +6,8 @@ CBS (Conflict Based Search) is an algorithm for solving multi-agent pathplanning
 
 ![Two MAPF problems](blob/img/moving.png)
 
+Here you can see two MAPF problems: on the left, the agents are moving with equal speeds; on the right, the purple agent is two times faster.
+
 ## Running the code
 
 If you'd like to use this code, please:
