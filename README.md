@@ -6,6 +6,8 @@ CBS (Conflict Based Search) is an algorithm for solving multi-agent pathplanning
 
 [Two MAPF problems](https://github.com/julia-rovnik/CBS-2021/blob/2d73f2638a5845f9d570d4686f84562a9d327006/blob/img/graph.png?raw=true)
 
+![alt text](blob/img/graph.png)
+
 ## Running the code
 
 If you'd like to use this code, please:
