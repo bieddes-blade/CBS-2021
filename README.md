@@ -11,7 +11,7 @@ Here you can see two MAPF problems: on the left, the agents are moving with equa
 ## Running the code
 
 If you'd like to use this code, please:
-1) compile it (for example, ```g++ main.cpp map.cpp agent.cpp ctNode.cpp ctSolution.cpp search.cpp -o try-multirobot -std=c++0x```),
+1) compile it (for example, ```make build```),
 2) specify the parameters in [call-multirobot.py](call-multirobot.py),
 3) and run it with python3.
 
